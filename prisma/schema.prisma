@@ -1,0 +1,300 @@
+// ============================================================
+// 🗄️ SCHEMA DO BANCO DE DADOS (Prisma Schema)
+// ============================================================
+// Este é o "mapa" do banco de dados. Cada "model" aqui vira
+// uma tabela no PostgreSQL. O Prisma lê este arquivo e:
+//
+// 1. Gera o "Prisma Client" — uma biblioteca TypeScript que
+//    permite consultar o banco de dados com autocomplete.
+//
+// 2. Cria "migrations" — scripts SQL que alteram o banco de
+//    dados para refletir mudanças neste arquivo.
+//
+// 📌 IMPORTANTE: Todos os models abaixo são exigidos pelo
+// Better Auth. NÃO renomeie as colunas sem atualizar o
+// mapeamento na configuração do Better Auth (lib/auth.ts).
+//
+// 💡 O "@@map" no final de cada model define o nome REAL da
+// tabela no banco. Ex: model User → tabela "user".
+// ============================================================
+
+// O "generator" diz ao Prisma COMO gerar o client.
+// "output" define ONDE o client gerado será salvo.
+generator client {
+  provider = "prisma-client"
+  output   = "./client"
+}
+
+// O "datasource" diz ao Prisma QUAL banco usar.
+// A URL de conexão vem da variável de ambiente DATABASE_URL.
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// 👤 USUÁRIO (User)
+// ============================================================
+// Tabela central de usuários. Cada pessoa que se cadastra
+// (por e-mail/senha ou OAuth) ganha um registro aqui.
+//
+// Campos importantes:
+// - emailVerified: se o e-mail foi confirmado
+// - lastActiveOrganizationId: qual organização o usuário
+//   estava usando por último (para UX, ao reabrir o app)
+// ============================================================
+model User {
+  id            String   @id
+  name          String
+  email         String
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  // Relações: um usuário pode ter várias sessões e contas
+  sessions Session[]
+  accounts Account[]
+
+  // Relações com organizações: membros e convites
+  members     Member[]
+  invitations Invitation[]
+  twoFactors  TwoFactor[]
+  passkeys    Passkey[]
+
+  // Novos campos adicionados pelos plugins do Better Auth
+  username         String? @unique
+  displayUsername  String?
+  twoFactorEnabled Boolean @default(false)
+
+  // Última organização ativa (para restaurar ao fazer login)
+  lastActiveOrganizationId String?
+  lastActiveOrganization   Organization? @relation("LastActiveOrganization", fields: [lastActiveOrganizationId], references: [id])
+
+  @@unique([email])
+  @@index([lastActiveOrganizationId])
+  @@map("user")
+}
+
+// ============================================================
+// 🔑 SESSÃO (Session)
+// ============================================================
+// Cada vez que um usuário faz login, o Better Auth cria uma
+// sessão. O token da sessão é armazenado em um cookie HTTP-only
+// no navegador do usuário.
+//
+// - expiresAt: quando a sessão expira (padrão: 7 dias)
+// - ipAddress/userAgent: informações de segurança
+// - activeOrganizationId: qual organização está "selecionada"
+//   na sessão atual (o Better Auth usa isso internamente)
+// ============================================================
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Organização ativa na sessão (gerenciada pelo plugin organization)
+  activeOrganizationId String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+// ============================================================
+// 🏦 CONTA (Account)
+// ============================================================
+// Cada "conta" é um MÉTODO DE LOGIN vinculado a um usuário.
+// Um mesmo usuário pode ter várias contas:
+//   - Uma conta "credential" (e-mail/senha)
+//   - Uma conta "google" (OAuth do Google)
+//   - Uma conta "microsoft" (OAuth da Microsoft)
+//
+// Isso permite que o usuário faça login de várias formas
+// e todas levem ao mesmo perfil.
+//
+// - providerId: "credential", "google", "github", etc.
+// - accountId: ID externo do provedor OAuth
+// - password: hash da senha (só para providerId="credential")
+// - accessToken/refreshToken: tokens OAuth (para APIs externas)
+// ============================================================
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+// ============================================================
+// ✅ VERIFICAÇÃO (Verification)
+// ============================================================
+// Tabela usada pelo Better Auth para tokens temporários:
+//   - Verificação de e-mail
+//   - Reset de senha
+//   - Magic links
+//
+// Cada registro tem um prazo de expiração (expiresAt).
+// Após usar ou expirar, o registro pode ser limpo.
+// ============================================================
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ============================================================
+// 🏢 ORGANIZAÇÃO (Organization)
+// ============================================================
+// Organizações são a base do sistema multi-tenant.
+// Cada organização agrupa usuários (membros) e pode ter
+// configurações e dados próprios.
+//
+// - slug: URL amigável (ex: "minha-empresa")
+// - metadata: JSON livre para dados extras (plano, etc.)
+//
+// 💡 Ao fazer fork deste projeto, você pode adicionar campos
+// extras aqui para o seu caso de uso específico.
+// ============================================================
+model Organization {
+  id              String       @id
+  name            String
+  slug            String
+  logo            String?
+  createdAt       DateTime
+  metadata        String?
+  members         Member[]
+  invitations     Invitation[]
+  lastActiveUsers User[]       @relation("LastActiveOrganization")
+
+  // 💡 PONTO DE EXTENSÃO: adicione relações com seus models
+  // personalizados aqui. Ex: projetos, documentos, etc.
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+// ============================================================
+// 👥 MEMBRO (Member)
+// ============================================================
+// A tabela intermediária entre User e Organization.
+// Cada registro significa "este usuário pertence a esta org".
+//
+// - role: define o nível de acesso do membro
+//   Padrões: "owner" (dono), "admin" (administrador), "member"
+//
+// 💡 O Better Auth gerencia esta tabela automaticamente via
+// authClient.organization.inviteMember / addMember, etc.
+// ============================================================
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("member")
+}
+
+// ============================================================
+// 📨 CONVITE (Invitation)
+// ============================================================
+// Quando um admin convida alguém por e-mail, um registro é
+// criado aqui. O convidado pode aceitar ou recusar.
+//
+// - status: "pending" (pendente), "accepted", "rejected", "canceled"
+// - expiresAt: convites expiram (padrão: 48h)
+// - inviterId: quem enviou o convite
+//
+// O fluxo completo:
+// 1. Admin chama authClient.organization.inviteMember()
+// 2. Better Auth cria o registro e dispara sendInvitationEmail
+// 3. Convidado clica no link do e-mail
+// 4. Convidado aceita com authClient.organization.acceptInvitation()
+// 5. Better Auth cria um Member e atualiza o status do convite
+// ============================================================
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitation")
+}
+
+// ============================================================
+// 🔐 AUTENTICAÇÃO EM DUAS ETAPAS (TwoFactor)
+// ============================================================
+// Adicionado pelo plugin twoFactor. Armazena os segredos
+// TOTP e os códigos de recuperação (backupCodes).
+// ============================================================
+model TwoFactor {
+  id          String @id
+  secret      String
+  backupCodes String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("twoFactor")
+}
+
+// ============================================================
+// 🔑 PASSKEYS (Passkey)
+// ============================================================
+// Adicionado pelo plugin passkey. Armazena credenciais
+// biométricas ou hardware keys baseadas em WebAuthn.
+// ============================================================
+model Passkey {
+  id             String    @id
+  name           String?
+  publicKey      String
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID   String
+  counter        Int
+  deviceType     String
+  backedUp       Boolean
+  transports     String?
+  aaguid         String?
+  createdAt      DateTime? @default(now())
+
+  @@index([credentialID])
+  @@index([userId])
+  @@map("passkey")
+}
