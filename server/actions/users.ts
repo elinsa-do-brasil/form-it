@@ -41,7 +41,7 @@ export const getAllUsers = async (organizationId: string) => {
     const users = await db.user.findMany({
       where: {
         id: {
-          notIn: members.map((member) => member.userId),
+          notIn: members.map((member: { userId: string }) => member.userId),
         },
       },
     });

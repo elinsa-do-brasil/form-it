@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type Organization } from "@/prisma/client/client";
 import { authClient } from "@/lib/auth-client";
-import { OrganizationSwitcher } from "@/components/account/organization-switcher";
-import { AccessLevelIcon } from "@/components/account/access-level-icon";
-import { AdminPanel } from "./buttons/admin-panel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenuContent,
@@ -16,26 +12,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CircleUser, LogOut, Settings } from "lucide-react";
+import { CircleUser, FilePlus2, LogOut } from "lucide-react";
 
 interface LoggedAccountProps {
   session?: {
     user?: {
       name?: string | null;
       email?: string | null;
-      role?: string | null;
       image?: string | null;
     } | null;
   } | null;
-  organizations: Organization[];
-  preferredActiveOrganizationId?: string | null;
 }
 
-export function LoggedAccount({
-  session,
-  organizations,
-  preferredActiveOrganizationId,
-}: LoggedAccountProps) {
+export function LoggedAccount({ session }: LoggedAccountProps) {
   const router = useRouter();
 
   return (
@@ -61,24 +50,14 @@ export function LoggedAccount({
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          {organizations.length > 0 && (
-            <OrganizationSwitcher
-              organizations={organizations}
-              preferredActiveOrganizationId={preferredActiveOrganizationId}
-            />
-          )}
 
+        <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/configuracoes/conta">
-              <Settings className="size-4" />
-              Configurações
+            <Link href="/">
+              <FilePlus2 className="size-4" />
+              Novo pedido
             </Link>
           </DropdownMenuItem>
-
-          {session?.user?.role && <AccessLevelIcon level={session.user.role} />}
-
-          <AdminPanel />
 
           <DropdownMenuItem
             variant="destructive"

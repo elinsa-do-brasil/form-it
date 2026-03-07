@@ -11,7 +11,7 @@ export function Logo({ className }: LogoProps ){
       href="/"
       className={`font-averia text-4xl -translate-y-[3px] select-none ${className}`}
     >
-      boreas
+      form.it
     </Link>
   );
 }

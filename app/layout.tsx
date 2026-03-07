@@ -70,11 +70,11 @@ const geistMono = Geist_Mono({
 // 💡 ALTERAR: troque pelo nome do seu projeto ao fazer fork
 export const metadata: Metadata = {
   title: {
-    template: "Raauth: %s", // Páginas: "Raauth: Nome da Página"
-    default: "Raauth", // Página sem título específico
+    template: "Form IT: %s", // Páginas: "Form IT: Nome da Página"
+    default: "Form IT", // Página sem título específico
   },
   generator: "Next.js",
-  applicationName: "raauth",
+  applicationName: "form-it",
   authors: [{ name: "Raave Aires", url: "https://github.com/raave-aires" }],
   creator: "Raave Aires",
   publisher: "Raave Aires",

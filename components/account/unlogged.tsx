@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 
-import { LogIn, SquareUser, UserPlus } from "lucide-react";
+import { LogIn, SquareUser } from "lucide-react";
 import { Button } from "../ui/button";
 
 export function UnloggedAccount() {
@@ -28,12 +28,6 @@ export function UnloggedAccount() {
             <Link href="/entrar">
               <LogIn />
               Entrar
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/criar-conta">
-              <UserPlus />
-              Criar conta
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>

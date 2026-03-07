@@ -81,7 +81,9 @@ export async function getOrganizations() {
   const organizations = await db.organization.findMany({
     where: {
       id: {
-        in: members.map((member) => member.organizationId),
+        in: members.map(
+          (member: { organizationId: string }) => member.organizationId
+        ),
       },
     },
   });
@@ -94,7 +96,7 @@ export async function getOrganizations() {
     : // Se tem várias, usa a última ativa (se ela ainda existe)
     currentUser.lastActiveOrganizationId &&
       organizations.some(
-        (organization) =>
+        (organization: { id: string }) =>
           organization.id === currentUser.lastActiveOrganizationId
       )
       ? currentUser.lastActiveOrganizationId

@@ -19,14 +19,14 @@ export function RaauthCardHeader({ login = false }: RaauthCardHeaderProps) {
     <CardHeader>
       <CardTitle className="flex justify-between items-center">
         <Link href="/" className="font-averia text-3xl">
-          raauth
+          form.it
         </Link>
         <Lock size={14} />
       </CardTitle>
       <CardDescription>
         { login 
-          ? "Bem-vindo(a) de volta. Entre para continuar." 
-          : "Crie uma conta para começar." }
+          ? "Entre para abrir um novo pedido de equipamento." 
+          : "Esta tela não faz mais parte do fluxo principal." }
       </CardDescription>
     </CardHeader>
   )

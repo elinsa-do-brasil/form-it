@@ -1,5 +1,5 @@
 {
-  "name": "raauth",
+  "name": "form-it",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:client": "prisma generate",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio"
   },
   "dependencies": {

@@ -7,17 +7,15 @@ interface CardFooterProps {
 }
 
 export function CardFooter({ login = false }: CardFooterProps) {
+  if (login) {
+    return null;
+  }
+
   return (
     <CardFooterComponent className="flex justify-center">
-      {login ? (
-        <Button variant={"link"} asChild>
-          <Link href="/criar-conta">Não tem uma conta? Crie uma</Link>
-        </Button>
-      ) : (
-        <Button variant={"link"} asChild>
-          <Link href="/entrar">Já tem uma conta? Entre</Link>
-        </Button>
-      )}
+      <Button variant={"link"} asChild>
+        <Link href="/entrar">Já tem uma conta? Entre</Link>
+      </Button>
     </CardFooterComponent>
   )
 } 
