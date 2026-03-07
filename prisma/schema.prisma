@@ -60,6 +60,7 @@ model User {
   invitations Invitation[]
   twoFactors  TwoFactor[]
   passkeys    Passkey[]
+  submittedEquipmentRequests EquipmentRequest[] @relation("SubmittedEquipmentRequests")
 
   // Novos campos adicionados pelos plugins do Better Auth
   username         String? @unique
@@ -189,6 +190,7 @@ model Organization {
   members         Member[]
   invitations     Invitation[]
   lastActiveUsers User[]       @relation("LastActiveOrganization")
+  equipmentRequests EquipmentRequest[]
 
   // 💡 PONTO DE EXTENSÃO: adicione relações com seus models
   // personalizados aqui. Ex: projetos, documentos, etc.
@@ -297,4 +299,66 @@ model Passkey {
   @@index([credentialID])
   @@index([userId])
   @@map("passkey")
+}
+
+// ============================================================
+// 🧾 SOLICITAÇÃO DE EQUIPAMENTOS
+// ============================================================
+// Registra pedidos de equipamentos de TI enviados por gestores.
+//
+// Estratégia de modelagem:
+// - Dados de cabeçalho ficam em colunas próprias para consulta
+// - Os itens solicitados ficam em JSON para suportar múltiplos
+//   equipamentos com regras específicas sem explodir o schema
+// - O payload normalizado enviado ao n8n também é persistido
+//   para auditoria e rastreabilidade
+// ============================================================
+model EquipmentRequest {
+  id                String                 @id @default(cuid())
+  organizationId    String?
+  organization      Organization?          @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  submittedByUserId String
+  submittedByUser   User                   @relation("SubmittedEquipmentRequests", fields: [submittedByUserId], references: [id], onDelete: Cascade)
+
+  requesterName       String
+  requesterEmail      String
+  requesterRole       RequesterRole
+  requesterDepartment String
+  requesterPhone      String?
+
+  futureUserName       String
+  futureUserEmail      String
+  futureUserDepartment String
+  futureUserJobTitle   String?
+  futureUserLocation   String?
+
+  justification String
+  notes         String?
+  items         Json
+
+  normalizedPayload Json
+  webhookStatus     WebhookDeliveryStatus @default(pending)
+  webhookHttpStatus Int?
+  webhookResponseBody String?
+  webhookAttemptedAt DateTime?
+  webhookDeliveredAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([submittedByUserId])
+  @@index([createdAt])
+  @@map("equipment_request")
+}
+
+enum RequesterRole {
+  manager
+  coordinator
+}
+
+enum WebhookDeliveryStatus {
+  pending
+  delivered
+  failed
 }
