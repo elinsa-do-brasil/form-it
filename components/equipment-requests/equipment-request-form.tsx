@@ -12,17 +12,23 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils";
 import {
   emptyEquipmentRequestItem,
   emptyEquipmentRequestValues,
   equipmentRequestSchema,
+  equipmentTypeHasProfileChoices,
   equipmentTypeLabels,
   equipmentTypeOptions,
+  getDefaultEquipmentProfile,
+  getEquipmentProfileDefinition,
+  getEquipmentProfileOptions,
   previousEquipmentDispositionLabels,
   previousEquipmentDispositionOptions,
   requesterRoleLabels,
   requesterRoleOptions,
   type EquipmentRequestFormValues,
+  type EquipmentType,
 } from "@/lib/schemas/equipment-request";
 
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +50,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -137,17 +144,11 @@ export function EquipmentRequestForm({
   return (
     <Card className="border-border/70 shadow-sm">
       <CardHeader className="gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {organizationName ? (
-            <Badge variant="outline">{organizationName}</Badge>
-          ) : null}
-          <Badge variant="secondary">Webhook n8n</Badge>
-        </div>
         <CardTitle className="text-2xl">Solicitação de equipamentos</CardTitle>
         <CardDescription className="max-w-2xl">
-          Preencha os dados do solicitante, do futuro usuário e dos itens
-          desejados. O envio é registrado no banco e encaminhado ao fluxo do
-          n8n ao final.
+          Preencha os dados do solicitante, do futuro usuário e selecione os
+          perfis padronizados de cada item. O envio é registrado no banco e
+          encaminhado ao fluxo do n8n ao final.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -228,35 +229,15 @@ export function EquipmentRequestForm({
                   name="requesterDepartment"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Área / departamento</FormLabel>
+                      <FormLabel>Setor</FormLabel>
                       <FormControl>
-                        <Input placeholder="Operações, Comercial, TI..." {...field} />
+                        <Input placeholder="GEOM, SESMT etc." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="requesterPhone"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Telefone / ramal</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="+55 11 99999-9999"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Opcional, mas útil para retorno rápido do time de TI.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
             </section>
 
@@ -294,9 +275,41 @@ export function EquipmentRequestForm({
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="usuario@empresa.com"
+                          placeholder="usuario@grupoamperelinsa.com"
                           {...field}
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="futureUserCpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <Input
+                          inputMode="numeric"
+                          placeholder="000.000.000-00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="futureUserEmployeeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Matrícula do funcionário</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex.: 0001" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -308,9 +321,9 @@ export function EquipmentRequestForm({
                   name="futureUserDepartment"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Área / departamento</FormLabel>
+                      <FormLabel>Setor</FormLabel>
                       <FormControl>
-                        <Input placeholder="Atendimento, Vendas, Campo..." {...field} />
+                        <Input placeholder="GEOM, SESMT etc." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -343,7 +356,7 @@ export function EquipmentRequestForm({
                       <FormLabel>Localidade / base</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Matriz SP, operação Nordeste, atuação em campo..."
+                          placeholder="Abaetetuba, Paragominas, uso em campo etc."
                           {...field}
                           value={field.value ?? ""}
                         />
@@ -364,8 +377,8 @@ export function EquipmentRequestForm({
                     3. Equipamentos solicitados
                   </h2>
                   <p className="text-muted-foreground text-sm">
-                    Adicione um ou mais itens. Cada tipo pode aparecer uma única
-                    vez por solicitação.
+                    Cada tipo pode aparecer uma única vez por solicitação. Os
+                    perfis padronizados orientam o provisionamento do item.
                   </p>
                 </div>
 
@@ -386,6 +399,13 @@ export function EquipmentRequestForm({
                   const selectedTypes = watchedItems
                     ?.map((item) => item?.equipmentType)
                     .filter(Boolean);
+                  const equipmentType =
+                    itemValues?.equipmentType ?? itemField.equipmentType;
+                  const profileOptions = getEquipmentProfileOptions(equipmentType);
+                  const profileDefinition = getEquipmentProfileDefinition(
+                    equipmentType,
+                    itemValues?.equipmentProfile ?? itemField.equipmentProfile,
+                  );
                   const isReplacement = Boolean(itemValues?.isReplacement);
 
                   return (
@@ -394,10 +414,18 @@ export function EquipmentRequestForm({
                       className="bg-muted/20 rounded-xl border p-4"
                     >
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-medium">Item {index + 1}</p>
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium">Item {index + 1}</p>
+                            <Badge variant="outline">
+                              {equipmentTypeLabels[equipmentType]}
+                            </Badge>
+                            <Badge variant="secondary">
+                              {profileDefinition.label}
+                            </Badge>
+                          </div>
                           <p className="text-muted-foreground text-sm">
-                            Quantidade, tipo e contexto operacional do pedido.
+                            Quantidade, perfil e contexto operacional do pedido.
                           </p>
                         </div>
 
@@ -422,7 +450,19 @@ export function EquipmentRequestForm({
                               <FormLabel>Tipo de equipamento</FormLabel>
                               <Select
                                 value={field.value}
-                                onValueChange={field.onChange}
+                                onValueChange={(value) => {
+                                  const nextType = value as EquipmentType;
+
+                                  field.onChange(nextType);
+                                  form.setValue(
+                                    `items.${index}.equipmentProfile`,
+                                    getDefaultEquipmentProfile(nextType),
+                                    {
+                                      shouldDirty: true,
+                                      shouldValidate: true,
+                                    },
+                                  );
+                                }}
                                 disabled={isBusy}
                               >
                                 <FormControl>
@@ -475,26 +515,73 @@ export function EquipmentRequestForm({
                             </FormItem>
                           )}
                         />
-                      </div>
 
-                      <div className="mt-4">
                         <FormField
                           control={form.control}
-                          name={`items.${index}.technicalRequirements` as const}
+                          name={`items.${index}.equipmentProfile` as const}
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Especificações e observações</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Ex.: notebook com 16GB RAM, chip corporativo, uso externo, mochila, monitor adicional..."
-                                  {...field}
-                                  value={field.value ?? ""}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Descreva configuração desejada, acessórios ou
-                                requisitos técnicos.
-                              </FormDescription>
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Perfil do equipamento</FormLabel>
+                              {equipmentTypeHasProfileChoices(equipmentType) ? (
+                                <>
+                                  <FormControl>
+                                    <RadioGroup
+                                      value={field.value}
+                                      onValueChange={field.onChange}
+                                      className="grid gap-3"
+                                    >
+                                      {profileOptions.map((option) => {
+                                        const optionId = `item-${index}-${option.value}`;
+                                        const isSelected =
+                                          field.value === option.value;
+
+                                        return (
+                                          <div key={option.value} className="relative">
+                                            <RadioGroupItem
+                                              value={option.value}
+                                              id={optionId}
+                                              className="sr-only"
+                                              disabled={isBusy}
+                                            />
+                                            <label
+                                              htmlFor={optionId}
+                                              className={cn(
+                                                "flex cursor-pointer flex-col gap-2 rounded-lg border p-4 transition-colors",
+                                                isSelected
+                                                  ? "border-primary bg-primary/5"
+                                                  : "hover:bg-muted/40",
+                                              )}
+                                            >
+                                              <span className="flex flex-wrap items-center justify-between gap-2">
+                                                <span className="font-medium">
+                                                  {option.label}
+                                                </span>
+                                                {isSelected ? (
+                                                  <Badge variant="secondary">
+                                                    Selecionado
+                                                  </Badge>
+                                                ) : null}
+                                              </span>
+                                              <span className="text-muted-foreground text-sm">
+                                                {option.description}
+                                              </span>
+                                            </label>
+                                          </div>
+                                        );
+                                      })}
+                                    </RadioGroup>
+                                  </FormControl>
+                                </>
+                              ) : (
+                                <div className="rounded-lg border border-dashed p-4">
+                                  <p className="font-medium">
+                                    Perfil aplicado: {profileDefinition.label}
+                                  </p>
+                                  <p className="text-muted-foreground mt-1 text-sm">
+                                    {profileDefinition.description}
+                                  </p>
+                                </div>
+                              )}
                               <FormMessage />
                             </FormItem>
                           )}
@@ -536,7 +623,7 @@ export function EquipmentRequestForm({
                                     <FormLabel>Motivo da substituição</FormLabel>
                                     <FormControl>
                                       <Textarea
-                                        placeholder="Ex.: equipamento com falhas recorrentes, obsolescência, mudança de função..."
+                                        placeholder="Ex.: equipamento com falhas recorrentes, obsolescência ou mudança de função."
                                         {...field}
                                         value={field.value ?? ""}
                                       />
@@ -594,7 +681,7 @@ export function EquipmentRequestForm({
                                     <FormLabel>Modelo anterior</FormLabel>
                                     <FormControl>
                                       <Input
-                                        placeholder="Dell Latitude, iPhone 13..."
+                                        placeholder="Dell Vostro, iPhone..."
                                         {...field}
                                         value={field.value ?? ""}
                                       />
@@ -667,7 +754,7 @@ export function EquipmentRequestForm({
                                   <FormLabel>Dados adicionais do equipamento anterior</FormLabel>
                                   <FormControl>
                                     <Textarea
-                                      placeholder="Estado atual, defeitos, usuário atual, detalhes logísticos..."
+                                      placeholder="Estado atual, defeitos, usuário atual ou detalhes logísticos."
                                       {...field}
                                       value={field.value ?? ""}
                                     />
@@ -689,52 +776,30 @@ export function EquipmentRequestForm({
 
             <section className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-lg font-semibold">
-                  4. Justificativa e contexto
-                </h2>
+                <h2 className="text-lg font-semibold">4. Justificativa</h2>
                 <p className="text-muted-foreground text-sm">
                   Explique a necessidade do pedido para facilitar a triagem do
                   time de TI e o processamento no n8n.
                 </p>
               </div>
 
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="justification"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Justificativa do pedido</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Descreva o motivo da solicitação, impacto operacional e contexto de uso."
-                          className="min-h-32"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações adicionais</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Informações extras para logística, aprovação ou preparação do item."
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="justification"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Justificativa do pedido</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Descreva o motivo da solicitação, impacto operacional e contexto de uso."
+                        className="min-h-32"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </section>
 
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">

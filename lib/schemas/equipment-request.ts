@@ -7,6 +7,15 @@ export const equipmentTypeOptions = [
   "desktop",
   "tablet",
   "starlink",
+  "extra_monitor",
+] as const;
+export const equipmentProfileOptions = [
+  "standard",
+  "cellphone_standard",
+  "cellphone_executive",
+  "notebook_standard",
+  "notebook_intermediate",
+  "notebook_advanced",
 ] as const;
 export const previousEquipmentDispositionOptions = [
   "return_to_it",
@@ -17,9 +26,29 @@ export const previousEquipmentDispositionOptions = [
   "other",
 ] as const;
 
+export type RequesterRole = (typeof requesterRoleOptions)[number];
+export type EquipmentType = (typeof equipmentTypeOptions)[number];
+export type EquipmentProfile = (typeof equipmentProfileOptions)[number];
+export type PreviousEquipmentDisposition =
+  (typeof previousEquipmentDispositionOptions)[number];
+
+type EquipmentProfileDefinition = {
+  value: EquipmentProfile;
+  label: string;
+  description: string;
+};
+
 const optionalTrimmedString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() || undefined : value),
   z.string().optional(),
+);
+
+const cpfString = z.preprocess(
+  (value) =>
+    typeof value === "string" ? value.replace(/\D/g, "").trim() : value,
+  z
+    .string({ error: "O CPF do futuro usuário é obrigatório." })
+    .length(11, "O CPF deve conter 11 dígitos."),
 );
 
 const requiredTrimmedString = (
@@ -39,11 +68,135 @@ const requiredTrimmedString = (
   );
 };
 
+export const requesterRoleLabels: Record<RequesterRole, string> = {
+  manager: "Gerente",
+  coordinator: "Coordenador",
+};
+
+export const equipmentTypeLabels: Record<EquipmentType, string> = {
+  cellphone: "Celular",
+  notebook: "Notebook",
+  desktop: "Desktop",
+  tablet: "Tablet",
+  starlink: "Starlink",
+  extra_monitor: "Monitor extra",
+};
+
+export const previousEquipmentDispositionLabels: Record<
+  PreviousEquipmentDisposition,
+  string
+> = {
+  return_to_it: "Devolver ao TI",
+  reallocate: "Realocar internamente",
+  donate: "Doação",
+  discard: "Descarte",
+  store: "Armazenar",
+  other: "Outro destino",
+};
+
+export const equipmentProfilesByType: Record<
+  EquipmentType,
+  readonly EquipmentProfileDefinition[]
+> = {
+  cellphone: [
+    {
+      value: "cellphone_standard",
+      label: "Celular corporativo padrão - linha A1X",
+      description:
+        "Indicado para a maioria das pessoas, com foco em e-mail, apps corporativos, autenticadores e comunicação diária.",
+    },
+    {
+      value: "cellphone_executive",
+      label: "Z Fold X",
+      description:
+        "Indicado para gerentes e cargos superiores, com mais tela para multitarefa, aprovações e produtividade móvel.",
+    },
+  ],
+  notebook: [
+    {
+      value: "notebook_standard",
+      label: "Padrão",
+      description:
+        "Indicado para planilhas básicas, área de trabalho remota, sistemas online e rotinas administrativas.",
+    },
+    {
+      value: "notebook_intermediate",
+      label: "Intermediário",
+      description:
+        "Indicado para uso com AutoCAD, Power BI, análise de dados com Python, programação e multitarefa pesada.",  
+    },
+    {
+      value: "notebook_advanced",
+      label: "Avançado",
+      description:
+        "Reservado para coordenadores e gerentes, que precisam de alta mobilidade.",
+    },
+  ],
+  desktop: [
+    {
+      value: "standard",
+      label: "Padrão",
+      description:
+        "Estação fixa padrão para sistemas online, planilhas e rotinas administrativas.",
+    },
+  ],
+  tablet: [
+    {
+      value: "standard",
+      label: "Padrão",
+      description:
+        "Tablet padrão para mobilidade operacional, checklists, coleta de dados e uso em campo.",
+    },
+  ],
+  starlink: [
+    {
+      value: "standard",
+      label: "Padrão",
+      description:
+        "Kit Starlink padrão para conectividade em bases remotas, obras e frentes de campo.",
+    },
+  ],
+  extra_monitor: [
+    {
+      value: "standard",
+      label: "Padrão",
+      description:
+        "Monitor adicional padrão para ampliar a área de trabalho e melhorar a multitarefa.",
+    },
+  ],
+};
+
+export function getEquipmentProfileOptions(type: EquipmentType) {
+  return equipmentProfilesByType[type];
+}
+
+export function getDefaultEquipmentProfile(type: EquipmentType): EquipmentProfile {
+  return equipmentProfilesByType[type][0].value;
+}
+
+export function getEquipmentProfileDefinition(
+  type: EquipmentType,
+  profile: EquipmentProfile | undefined,
+) {
+  const normalizedProfile = profile ?? getDefaultEquipmentProfile(type);
+
+  return (
+    equipmentProfilesByType[type].find(
+      (option) => option.value === normalizedProfile,
+    ) ?? equipmentProfilesByType[type][0]
+  );
+}
+
+export function equipmentTypeHasProfileChoices(type: EquipmentType) {
+  return equipmentProfilesByType[type].length > 1;
+}
+
 export const equipmentRequestItemSchema = z
   .object({
     equipmentType: z.enum(equipmentTypeOptions, {
       error: "Selecione um tipo de equipamento.",
     }),
+    equipmentProfile: z.enum(equipmentProfileOptions).optional(),
     quantity: z.coerce
       .number({ error: "Informe uma quantidade válida." })
       .int("A quantidade precisa ser um número inteiro.")
@@ -51,15 +204,30 @@ export const equipmentRequestItemSchema = z
       .max(100, "A quantidade máxima por item é 100."),
     isReplacement: z.boolean(),
     replacementReason: optionalTrimmedString,
-    previousEquipmentDisposition: z.enum(previousEquipmentDispositionOptions).optional(),
+    previousEquipmentDisposition: z
+      .enum(previousEquipmentDispositionOptions)
+      .optional(),
     previousEquipmentModel: optionalTrimmedString,
     previousEquipmentAssetTag: optionalTrimmedString,
     previousEquipmentSerialNumber: optionalTrimmedString,
     previousEquipmentPhoneNumber: optionalTrimmedString,
     previousEquipmentNotes: optionalTrimmedString,
-    technicalRequirements: optionalTrimmedString,
   })
   .superRefine((item, ctx) => {
+    const allowedProfiles = getEquipmentProfileOptions(item.equipmentType).map(
+      (option) => option.value,
+    );
+    const profile =
+      item.equipmentProfile ?? getDefaultEquipmentProfile(item.equipmentType);
+
+    if (!allowedProfiles.includes(profile)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["equipmentProfile"],
+        message: "Selecione um perfil compatível com o equipamento.",
+      });
+    }
+
     if (!item.isReplacement) {
       return;
     }
@@ -95,7 +263,12 @@ export const equipmentRequestItemSchema = z
         message: "Informe ao menos um dado do equipamento anterior.",
       });
     }
-  });
+  })
+  .transform((item) => ({
+    ...item,
+    equipmentProfile:
+      item.equipmentProfile ?? getDefaultEquipmentProfile(item.equipmentType),
+  }));
 
 export const equipmentRequestSchema = z
   .object({
@@ -109,12 +282,18 @@ export const equipmentRequestSchema = z
     requesterDepartment: requiredTrimmedString("A área do solicitante", {
       min: 2,
     }),
-    requesterPhone: optionalTrimmedString,
 
     futureUserName: requiredTrimmedString("O nome do futuro usuário", { min: 3 }),
     futureUserEmail: requiredTrimmedString("O e-mail do futuro usuário", {
       email: true,
     }),
+    futureUserCpf: cpfString,
+    futureUserEmployeeId: requiredTrimmedString(
+      "A matrícula do funcionário",
+      {
+        min: 1,
+      },
+    ),
     futureUserDepartment: requiredTrimmedString("A área do futuro usuário", {
       min: 2,
     }),
@@ -122,7 +301,6 @@ export const equipmentRequestSchema = z
     futureUserLocation: optionalTrimmedString,
 
     justification: requiredTrimmedString("A justificativa", { min: 20 }),
-    notes: optionalTrimmedString,
     items: z
       .array(equipmentRequestItemSchema)
       .min(1, "Adicione pelo menos um equipamento.")
@@ -150,70 +328,38 @@ export type EquipmentRequestItemInput = z.output<
 >;
 
 export type EquipmentRequestItemFormValues = {
-  equipmentType: (typeof equipmentTypeOptions)[number];
+  equipmentType: EquipmentType;
+  equipmentProfile: EquipmentProfile;
   quantity: number;
   isReplacement: boolean;
   replacementReason: string;
-  previousEquipmentDisposition?:
-    | (typeof previousEquipmentDispositionOptions)[number]
-    | undefined;
+  previousEquipmentDisposition?: PreviousEquipmentDisposition | undefined;
   previousEquipmentModel: string;
   previousEquipmentAssetTag: string;
   previousEquipmentSerialNumber: string;
   previousEquipmentPhoneNumber: string;
   previousEquipmentNotes: string;
-  technicalRequirements: string;
 };
 
 export type EquipmentRequestFormValues = {
   requesterName: string;
   requesterEmail: string;
-  requesterRole: (typeof requesterRoleOptions)[number];
+  requesterRole: RequesterRole;
   requesterDepartment: string;
-  requesterPhone: string;
   futureUserName: string;
   futureUserEmail: string;
+  futureUserCpf: string;
+  futureUserEmployeeId: string;
   futureUserDepartment: string;
   futureUserJobTitle: string;
   futureUserLocation: string;
   justification: string;
-  notes: string;
   items: EquipmentRequestItemFormValues[];
-};
-
-export const requesterRoleLabels: Record<
-  (typeof requesterRoleOptions)[number],
-  string
-> = {
-  manager: "Gerente",
-  coordinator: "Coordenador",
-};
-
-export const equipmentTypeLabels: Record<
-  (typeof equipmentTypeOptions)[number],
-  string
-> = {
-  cellphone: "Celular",
-  notebook: "Notebook",
-  desktop: "Desktop",
-  tablet: "Tablet",
-  starlink: "Starlink",
-};
-
-export const previousEquipmentDispositionLabels: Record<
-  (typeof previousEquipmentDispositionOptions)[number],
-  string
-> = {
-  return_to_it: "Devolver ao TI",
-  reallocate: "Realocar internamente",
-  donate: "Doação",
-  discard: "Descarte",
-  store: "Armazenar",
-  other: "Outro destino",
 };
 
 export const emptyEquipmentRequestItem = (): EquipmentRequestItemFormValues => ({
   equipmentType: "notebook",
+  equipmentProfile: "notebook_standard",
   quantity: 1,
   isReplacement: false,
   replacementReason: "",
@@ -223,7 +369,6 @@ export const emptyEquipmentRequestItem = (): EquipmentRequestItemFormValues => (
   previousEquipmentSerialNumber: "",
   previousEquipmentPhoneNumber: "",
   previousEquipmentNotes: "",
-  technicalRequirements: "",
 });
 
 export const emptyEquipmentRequestValues = (): EquipmentRequestFormValues => ({
@@ -231,13 +376,13 @@ export const emptyEquipmentRequestValues = (): EquipmentRequestFormValues => ({
   requesterEmail: "",
   requesterRole: "manager",
   requesterDepartment: "",
-  requesterPhone: "",
   futureUserName: "",
   futureUserEmail: "",
+  futureUserCpf: "",
+  futureUserEmployeeId: "",
   futureUserDepartment: "",
   futureUserJobTitle: "",
   futureUserLocation: "",
   justification: "",
-  notes: "",
   items: [emptyEquipmentRequestItem()],
 });

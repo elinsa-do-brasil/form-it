@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import {
   equipmentRequestItemSchema,
+  equipmentTypeHasProfileChoices,
   equipmentTypeLabels,
+  getEquipmentProfileDefinition,
   previousEquipmentDispositionLabels,
   requesterRoleLabels,
 } from "@/lib/schemas/equipment-request";
@@ -31,6 +33,16 @@ function formatDateTime(value: Date) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(value);
+}
+
+function formatCpf(value: string) {
+  const digits = value.replace(/\D/g, "");
+
+  if (digits.length !== 11) {
+    return value;
+  }
+
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
 function WebhookStatusBadge({
@@ -68,11 +80,12 @@ export default async function ConfirmationPage({
       requesterDepartment: true,
       futureUserName: true,
       futureUserEmail: true,
+      futureUserCpf: true,
+      futureUserEmployeeId: true,
       futureUserDepartment: true,
       futureUserJobTitle: true,
       futureUserLocation: true,
       justification: true,
-      notes: true,
       items: true,
       webhookStatus: true,
       webhookResponseBody: true,
@@ -180,6 +193,14 @@ export default async function ConfirmationPage({
               {request.futureUserEmail}
             </p>
             <p>
+              <span className="font-medium">CPF:</span>{" "}
+              {formatCpf(request.futureUserCpf)}
+            </p>
+            <p>
+              <span className="font-medium">Matrícula:</span>{" "}
+              {request.futureUserEmployeeId}
+            </p>
+            <p>
               <span className="font-medium">Área:</span>{" "}
               {request.futureUserDepartment}
             </p>
@@ -207,70 +228,82 @@ export default async function ConfirmationPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {parsedItems.data.map((item, index) => (
-            <div key={`${request.id}-${index}`} className="rounded-lg border p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-medium">
-                  {item.quantity}x {equipmentTypeLabels[item.equipmentType]}
-                </p>
-                {item.isReplacement ? (
-                  <Badge variant="outline">Substituição</Badge>
-                ) : null}
-              </div>
+          {parsedItems.data.map((item, index) => {
+            const profile = getEquipmentProfileDefinition(
+              item.equipmentType,
+              item.equipmentProfile,
+            );
 
-              <div className="mt-3 space-y-2 text-sm">
-                {item.technicalRequirements ? (
-                  <p>{item.technicalRequirements}</p>
-                ) : null}
-                {item.replacementReason ? (
-                  <p>
-                    <span className="font-medium">Motivo:</span>{" "}
-                    {item.replacementReason}
+            return (
+              <div key={`${request.id}-${index}`} className="rounded-lg border p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-medium">
+                    {item.quantity}x {equipmentTypeLabels[item.equipmentType]}
                   </p>
-                ) : null}
-                {item.previousEquipmentDisposition ? (
-                  <p>
-                    <span className="font-medium">Destino do item anterior:</span>{" "}
-                    {
-                      previousEquipmentDispositionLabels[
-                        item.previousEquipmentDisposition
-                      ]
-                    }
-                  </p>
-                ) : null}
-                {item.previousEquipmentModel ? (
-                  <p>
-                    <span className="font-medium">Modelo anterior:</span>{" "}
-                    {item.previousEquipmentModel}
-                  </p>
-                ) : null}
-                {item.previousEquipmentAssetTag ? (
-                  <p>
-                    <span className="font-medium">Patrimônio:</span>{" "}
-                    {item.previousEquipmentAssetTag}
-                  </p>
-                ) : null}
-                {item.previousEquipmentSerialNumber ? (
-                  <p>
-                    <span className="font-medium">Serial:</span>{" "}
-                    {item.previousEquipmentSerialNumber}
-                  </p>
-                ) : null}
-                {item.previousEquipmentPhoneNumber ? (
-                  <p>
-                    <span className="font-medium">Linha anterior:</span>{" "}
-                    {item.previousEquipmentPhoneNumber}
-                  </p>
-                ) : null}
-                {item.previousEquipmentNotes ? (
-                  <p>
-                    <span className="font-medium">Observações:</span>{" "}
-                    {item.previousEquipmentNotes}
-                  </p>
-                ) : null}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {equipmentTypeHasProfileChoices(item.equipmentType) ? (
+                      <Badge variant="secondary">{profile.label}</Badge>
+                    ) : (
+                      <Badge variant="secondary">Perfil padrão</Badge>
+                    )}
+                    {item.isReplacement ? (
+                      <Badge variant="outline">Substituição</Badge>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="mt-3 space-y-2 text-sm">
+                  <p className="text-muted-foreground">{profile.description}</p>
+                  {item.replacementReason ? (
+                    <p>
+                      <span className="font-medium">Motivo:</span>{" "}
+                      {item.replacementReason}
+                    </p>
+                  ) : null}
+                  {item.previousEquipmentDisposition ? (
+                    <p>
+                      <span className="font-medium">Destino do item anterior:</span>{" "}
+                      {
+                        previousEquipmentDispositionLabels[
+                          item.previousEquipmentDisposition
+                        ]
+                      }
+                    </p>
+                  ) : null}
+                  {item.previousEquipmentModel ? (
+                    <p>
+                      <span className="font-medium">Modelo anterior:</span>{" "}
+                      {item.previousEquipmentModel}
+                    </p>
+                  ) : null}
+                  {item.previousEquipmentAssetTag ? (
+                    <p>
+                      <span className="font-medium">Patrimônio:</span>{" "}
+                      {item.previousEquipmentAssetTag}
+                    </p>
+                  ) : null}
+                  {item.previousEquipmentSerialNumber ? (
+                    <p>
+                      <span className="font-medium">Serial:</span>{" "}
+                      {item.previousEquipmentSerialNumber}
+                    </p>
+                  ) : null}
+                  {item.previousEquipmentPhoneNumber ? (
+                    <p>
+                      <span className="font-medium">Linha anterior:</span>{" "}
+                      {item.previousEquipmentPhoneNumber}
+                    </p>
+                  ) : null}
+                  {item.previousEquipmentNotes ? (
+                    <p>
+                      <span className="font-medium">Observações:</span>{" "}
+                      {item.previousEquipmentNotes}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -278,11 +311,8 @@ export default async function ConfirmationPage({
         <CardHeader>
           <CardTitle>Justificativa</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="text-sm">
           <p>{request.justification}</p>
-          {request.notes ? (
-            <p className="text-muted-foreground">{request.notes}</p>
-          ) : null}
         </CardContent>
       </Card>
     </div>

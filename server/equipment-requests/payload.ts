@@ -1,6 +1,8 @@
 import type { EquipmentRequestInput } from "@/lib/schemas/equipment-request";
 import {
+  equipmentTypeHasProfileChoices,
   equipmentTypeLabels,
+  getEquipmentProfileDefinition,
   previousEquipmentDispositionLabels,
   requesterRoleLabels,
 } from "@/lib/schemas/equipment-request";
@@ -30,30 +32,39 @@ export function buildEquipmentRequestWebhookPayload({
   organization,
   submittedBy,
 }: BuildPayloadParams) {
-  const normalizedItems = input.items.map((item) => ({
-    equipmentType: item.equipmentType,
-    equipmentLabel: equipmentTypeLabels[item.equipmentType],
-    quantity: item.quantity,
-    isReplacement: item.isReplacement,
-    technicalRequirements: item.technicalRequirements,
-    replacementReason: item.replacementReason,
-    previousEquipmentDisposition: item.previousEquipmentDisposition
-      ? {
-          value: item.previousEquipmentDisposition,
-          label:
-            previousEquipmentDispositionLabels[item.previousEquipmentDisposition],
-        }
-      : null,
-    previousEquipment: item.isReplacement
-      ? {
-          model: item.previousEquipmentModel,
-          assetTag: item.previousEquipmentAssetTag,
-          serialNumber: item.previousEquipmentSerialNumber,
-          phoneNumber: item.previousEquipmentPhoneNumber,
-          notes: item.previousEquipmentNotes,
-        }
-      : null,
-  }));
+  const normalizedItems = input.items.map((item) => {
+    const profile = getEquipmentProfileDefinition(
+      item.equipmentType,
+      item.equipmentProfile,
+    );
+
+    return {
+      equipmentType: item.equipmentType,
+      equipmentLabel: equipmentTypeLabels[item.equipmentType],
+      equipmentProfile: item.equipmentProfile,
+      equipmentProfileLabel: profile.label,
+      equipmentProfileDescription: profile.description,
+      quantity: item.quantity,
+      isReplacement: item.isReplacement,
+      replacementReason: item.replacementReason,
+      previousEquipmentDisposition: item.previousEquipmentDisposition
+        ? {
+            value: item.previousEquipmentDisposition,
+            label:
+              previousEquipmentDispositionLabels[item.previousEquipmentDisposition],
+          }
+        : null,
+      previousEquipment: item.isReplacement
+        ? {
+            model: item.previousEquipmentModel,
+            assetTag: item.previousEquipmentAssetTag,
+            serialNumber: item.previousEquipmentSerialNumber,
+            phoneNumber: item.previousEquipmentPhoneNumber,
+            notes: item.previousEquipmentNotes,
+          }
+        : null,
+    };
+  });
 
   const totalUnits = normalizedItems.reduce(
     (accumulator, item) => accumulator + item.quantity,
@@ -71,24 +82,28 @@ export function buildEquipmentRequestWebhookPayload({
       role: input.requesterRole,
       roleLabel: requesterRoleLabels[input.requesterRole],
       department: input.requesterDepartment,
-      phone: input.requesterPhone,
     },
     futureUser: {
       name: input.futureUserName,
       email: input.futureUserEmail,
+      cpf: input.futureUserCpf,
+      employeeId: input.futureUserEmployeeId,
       department: input.futureUserDepartment,
       jobTitle: input.futureUserJobTitle,
       location: input.futureUserLocation,
     },
     justification: input.justification,
-    notes: input.notes,
     items: normalizedItems,
     totals: {
       itemCount: normalizedItems.length,
       totalUnits,
     },
     summary: normalizedItems
-      .map((item) => `${item.quantity}x ${item.equipmentLabel}`)
+      .map((item) =>
+        equipmentTypeHasProfileChoices(item.equipmentType)
+          ? `${item.quantity}x ${item.equipmentLabel} (${item.equipmentProfileLabel})`
+          : `${item.quantity}x ${item.equipmentLabel}`,
+      )
       .join(", "),
   };
 }

@@ -328,6 +328,8 @@ model EquipmentRequest {
 
   futureUserName       String
   futureUserEmail      String
+  futureUserCpf        String
+  futureUserEmployeeId String
   futureUserDepartment String
   futureUserJobTitle   String?
   futureUserLocation   String?
