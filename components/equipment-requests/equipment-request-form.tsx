@@ -381,16 +381,6 @@ export function EquipmentRequestForm({
                     perfis padronizados orientam o provisionamento do item.
                   </p>
                 </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => append(emptyEquipmentRequestItem())}
-                  disabled={!canAddMoreItems || isBusy}
-                >
-                  <Plus />
-                  Adicionar item
-                </Button>
               </div>
 
               <div className="space-y-4">
@@ -770,6 +760,16 @@ export function EquipmentRequestForm({
                   );
                 })}
               </div>
+
+              <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => append(emptyEquipmentRequestItem())}
+                  disabled={!canAddMoreItems || isBusy}
+                >
+                  <Plus />
+                  Adicionar item
+                </Button>
             </section>
 
             <Separator />

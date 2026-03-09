@@ -37,37 +37,59 @@ export default async function HomePage() {
         <Card>
           <CardHeader className="gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Fluxo principal</Badge>
+              <Badge variant="secondary">Fluxo do pedido</Badge>
               {organization?.name ? (
                 <Badge variant="outline">{organization.name}</Badge>
               ) : null}
             </div>
             <CardTitle className="text-2xl">
-              Login, formulário e confirmação
+              Como funciona o pedido de equipamento
             </CardTitle>
             <CardDescription>
-              O sistema foi simplificado para um fluxo direto: entrar, preencher
-              o pedido e receber a confirmação com o status do processamento.
+              Acompanhe cada etapa do processo, desde a solicitação até a entrega
+              do equipamento.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div className="rounded-lg border px-4 py-3">
-              <p className="font-medium">1. Autenticação</p>
+              <p className="font-medium">1. Solicitação</p>
               <p className="text-muted-foreground mt-1">
-                O usuário entra no sistema e cai direto na tela de pedido.
+                O solicitante preenche e envia o pedido por este formulário. A
+                solicitação é encaminhada ao coordenador do setor de TI.
               </p>
             </div>
             <div className="rounded-lg border px-4 py-3">
-              <p className="font-medium">2. Registro do pedido</p>
+              <p className="font-medium">2. Análise do coordenador</p>
               <p className="text-muted-foreground mt-1">
-                O formulário valida todos os campos antes de persistir no banco.
+                O coordenador de TI avalia o pedido e decide pela aprovação ou
+                reprovação.
               </p>
             </div>
             <div className="rounded-lg border px-4 py-3">
-              <p className="font-medium">3. Confirmação</p>
+              <p className="font-medium">3. Notificação</p>
               <p className="text-muted-foreground mt-1">
-                Após salvar, o usuário vê uma confirmação com o identificador e
-                o status do webhook do n8n.
+                O solicitante é notificado sobre o resultado da análise do
+                coordenador.
+              </p>
+            </div>
+            <div className="rounded-lg border px-4 py-3">
+              <p className="font-medium">4. Compras ou alocações</p>
+              <p className="text-muted-foreground mt-1">
+                Após a aprovação, as compras ou alocações necessárias são
+                preparadas.
+              </p>
+            </div>
+            <div className="rounded-lg border px-4 py-3">
+              <p className="font-medium">5. Termo de responsabilidade</p>
+              <p className="text-muted-foreground mt-1">
+                Um termo de responsabilidade de uso é emitido para o
+                futuro usuário.
+              </p>
+            </div>
+            <div className="rounded-lg border px-4 py-3">
+              <p className="font-medium">6. Entrega</p>
+              <p className="text-muted-foreground mt-1">
+                O equipamento é entregue ao futuro usuário.
               </p>
             </div>
           </CardContent>
