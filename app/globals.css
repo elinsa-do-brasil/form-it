@@ -119,12 +119,6 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html {
-    scroll-padding-top: calc(var(--header-h) + 0.75rem);
-  }
-  :where([id]) {
-    scroll-margin-top: calc(var(--header-h) + 0.75rem);
-  }
   body {
     @apply bg-background text-foreground;
   }

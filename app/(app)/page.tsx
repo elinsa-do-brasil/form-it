@@ -28,7 +28,6 @@ export default async function HomePage() {
   return (
     <div className="mx-auto grid max-w-6xl gap-6 py-6 lg:grid-cols-[minmax(0,1.8fr)_360px]">
       <EquipmentRequestForm
-        organizationName={organization?.name ?? null}
         defaultRequesterName={session.user.name}
         defaultRequesterEmail={session.user.email}
       />

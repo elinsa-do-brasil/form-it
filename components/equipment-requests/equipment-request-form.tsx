@@ -49,6 +49,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -63,7 +64,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 type EquipmentRequestFormProps = {
-  organizationName?: string | null;
   defaultRequesterName?: string;
   defaultRequesterEmail?: string;
 };
@@ -83,7 +83,6 @@ function getInitialValues({
 }
 
 export function EquipmentRequestForm({
-  organizationName,
   defaultRequesterName,
   defaultRequesterEmail,
 }: EquipmentRequestFormProps) {
@@ -107,6 +106,10 @@ export function EquipmentRequestForm({
   const watchedItems = useWatch({
     control: form.control,
     name: "items",
+  });
+  const responsibilityConfirmed = useWatch({
+    control: form.control,
+    name: "requesterResponsibilityConfirmed",
   });
 
   async function onSubmit(values: EquipmentRequestFormValues) {
@@ -233,6 +236,27 @@ export function EquipmentRequestForm({
                       <FormControl>
                         <Input placeholder="GEOM, SESMT etc." {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="requesterPhone"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Número de contato</FormLabel>
+                      <FormControl>
+                        <Input
+                          inputMode="tel"
+                          placeholder="WhatsApp ou Telegram com DDD"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Usaremos esse número para as atualizações do pedido.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -802,24 +826,58 @@ export function EquipmentRequestForm({
               />
             </section>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
-              <p className="text-muted-foreground text-sm">
-                Ao enviar, a solicitação fica registrada e segue para o webhook
-                configurado no n8n.
-              </p>
-
-              <Button type="submit" disabled={isBusy}>
-                {isBusy ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <SendHorizontal />
-                    Enviar solicitação
-                  </>
+            <div className="flex flex-col justify-between gap-3 rounded-lg border px-4 py-3">
+              <FormField
+                control={form.control}
+                name="requesterResponsibilityConfirmed"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <div className="flex items-start gap-3">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(Boolean(checked));
+                          }}
+                          disabled={isBusy}
+                          className="mt-0.5"
+                        />
+                      </FormControl>
+                      <div className="space-y-1">
+                        <FormLabel className="leading-5">
+                          Confirmo que sou responsável por este envio e que os
+                          dados informados estão corretos.
+                        </FormLabel>
+                        <FormDescription>
+                          As atualizações do pedido serão encaminhadas para o
+                          número de contato informado acima.
+                        </FormDescription>
+                        <FormMessage />
+                      </div>
+                    </div>
+                  </FormItem>
                 )}
+              />
+
+              <Button
+                type="submit"
+                disabled={isBusy || !responsibilityConfirmed}
+                className="relative min-w-44"
+              >
+                <span
+                  className={cn(
+                    "flex items-center gap-2",
+                    isBusy ? "invisible" : "visible",
+                  )}
+                >
+                  <SendHorizontal />
+                  Enviar solicitação
+                </span>
+                {isBusy ? (
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="animate-spin" />
+                  </span>
+                ) : null}
               </Button>
             </div>
           </form>

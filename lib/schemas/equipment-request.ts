@@ -51,6 +51,15 @@ const cpfString = z.preprocess(
     .length(11, "O CPF deve conter 11 dígitos."),
 );
 
+const contactPhoneString = z.preprocess(
+  (value) =>
+    typeof value === "string" ? value.replace(/\D/g, "").trim() : value,
+  z
+    .string({ error: "O número de contato é obrigatório." })
+    .min(10, "Informe um número válido para WhatsApp ou Telegram.")
+    .max(15, "O número de contato deve ter no máximo 15 dígitos."),
+);
+
 const requiredTrimmedString = (
   label: string,
   { min = 1, email = false }: { min?: number; email?: boolean } = {},
@@ -101,15 +110,15 @@ export const equipmentProfilesByType: Record<
   cellphone: [
     {
       value: "cellphone_standard",
-      label: "Celular corporativo padrão - linha A1X",
+      label: "Celular corporativo padrão",
       description:
         "Indicado para a maioria das pessoas, com foco em e-mail, apps corporativos, autenticadores e comunicação diária.",
     },
     {
       value: "cellphone_executive",
-      label: "Z Fold X",
+      label: "Avançado",
       description:
-        "Indicado para gerentes e cargos superiores, com mais tela para multitarefa, aprovações e produtividade móvel.",
+        "Reservado para gerentes e cargos superiores, com mais tela para multitarefa e produtividade móvel.",
     },
   ],
   notebook: [
@@ -282,6 +291,7 @@ export const equipmentRequestSchema = z
     requesterDepartment: requiredTrimmedString("A área do solicitante", {
       min: 2,
     }),
+    requesterPhone: contactPhoneString,
 
     futureUserName: requiredTrimmedString("O nome do futuro usuário", { min: 3 }),
     futureUserEmail: requiredTrimmedString("O e-mail do futuro usuário", {
@@ -301,6 +311,9 @@ export const equipmentRequestSchema = z
     futureUserLocation: optionalTrimmedString,
 
     justification: requiredTrimmedString("A justificativa", { min: 20 }),
+    requesterResponsibilityConfirmed: z.literal(true, {
+      error: "Confirme a responsabilidade pelo envio para continuar.",
+    }),
     items: z
       .array(equipmentRequestItemSchema)
       .min(1, "Adicione pelo menos um equipamento.")
@@ -346,6 +359,7 @@ export type EquipmentRequestFormValues = {
   requesterEmail: string;
   requesterRole: RequesterRole;
   requesterDepartment: string;
+  requesterPhone: string;
   futureUserName: string;
   futureUserEmail: string;
   futureUserCpf: string;
@@ -354,6 +368,7 @@ export type EquipmentRequestFormValues = {
   futureUserJobTitle: string;
   futureUserLocation: string;
   justification: string;
+  requesterResponsibilityConfirmed: boolean;
   items: EquipmentRequestItemFormValues[];
 };
 
@@ -376,6 +391,7 @@ export const emptyEquipmentRequestValues = (): EquipmentRequestFormValues => ({
   requesterEmail: "",
   requesterRole: "manager",
   requesterDepartment: "",
+  requesterPhone: "",
   futureUserName: "",
   futureUserEmail: "",
   futureUserCpf: "",
@@ -384,5 +400,6 @@ export const emptyEquipmentRequestValues = (): EquipmentRequestFormValues => ({
   futureUserJobTitle: "",
   futureUserLocation: "",
   justification: "",
+  requesterResponsibilityConfirmed: false,
   items: [emptyEquipmentRequestItem()],
 });

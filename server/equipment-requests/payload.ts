@@ -82,6 +82,7 @@ export function buildEquipmentRequestWebhookPayload({
       role: input.requesterRole,
       roleLabel: requesterRoleLabels[input.requesterRole],
       department: input.requesterDepartment,
+      phone: input.requesterPhone,
     },
     futureUser: {
       name: input.futureUserName,

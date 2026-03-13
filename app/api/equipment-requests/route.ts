@@ -78,6 +78,7 @@ export async function POST(request: Request) {
       requesterEmail: parsed.data.requesterEmail,
       requesterRole: parsed.data.requesterRole,
       requesterDepartment: parsed.data.requesterDepartment,
+      requesterPhone: parsed.data.requesterPhone,
       futureUserName: parsed.data.futureUserName,
       futureUserEmail: parsed.data.futureUserEmail,
       futureUserCpf: parsed.data.futureUserCpf,
