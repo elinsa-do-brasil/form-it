@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+export const maxEquipmentRequestItems = 4;
 export const requesterRoleOptions = ["manager", "coordinator"] as const;
 export const equipmentTypeOptions = [
   "cellphone",
@@ -17,20 +18,10 @@ export const equipmentProfileOptions = [
   "notebook_intermediate",
   "notebook_advanced",
 ] as const;
-export const previousEquipmentDispositionOptions = [
-  "return_to_it",
-  "reallocate",
-  "donate",
-  "discard",
-  "store",
-  "other",
-] as const;
 
 export type RequesterRole = (typeof requesterRoleOptions)[number];
 export type EquipmentType = (typeof equipmentTypeOptions)[number];
 export type EquipmentProfile = (typeof equipmentProfileOptions)[number];
-export type PreviousEquipmentDisposition =
-  (typeof previousEquipmentDispositionOptions)[number];
 
 type EquipmentProfileDefinition = {
   value: EquipmentProfile;
@@ -89,18 +80,6 @@ export const equipmentTypeLabels: Record<EquipmentType, string> = {
   tablet: "Tablet",
   starlink: "Starlink",
   extra_monitor: "Monitor extra",
-};
-
-export const previousEquipmentDispositionLabels: Record<
-  PreviousEquipmentDisposition,
-  string
-> = {
-  return_to_it: "Devolver ao TI",
-  reallocate: "Realocar internamente",
-  donate: "Doação",
-  discard: "Descarte",
-  store: "Armazenar",
-  other: "Outro destino",
 };
 
 export const equipmentProfilesByType: Record<
@@ -213,9 +192,6 @@ export const equipmentRequestItemSchema = z
       .max(100, "A quantidade máxima por item é 100."),
     isReplacement: z.boolean(),
     replacementReason: optionalTrimmedString,
-    previousEquipmentDisposition: z
-      .enum(previousEquipmentDispositionOptions)
-      .optional(),
     previousEquipmentModel: optionalTrimmedString,
     previousEquipmentAssetTag: optionalTrimmedString,
     previousEquipmentSerialNumber: optionalTrimmedString,
@@ -239,14 +215,6 @@ export const equipmentRequestItemSchema = z
 
     if (!item.isReplacement) {
       return;
-    }
-
-    if (!item.previousEquipmentDisposition) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["previousEquipmentDisposition"],
-        message: "Informe o destino do equipamento anterior.",
-      });
     }
 
     if (!item.replacementReason) {
@@ -317,6 +285,10 @@ export const equipmentRequestSchema = z
     items: z
       .array(equipmentRequestItemSchema)
       .min(1, "Adicione pelo menos um equipamento.")
+      .max(
+        maxEquipmentRequestItems,
+        `Cada solicitacao pode ter no maximo ${maxEquipmentRequestItems} itens.`,
+      )
       .superRefine((items, ctx) => {
         const duplicates = new Set<string>();
 
@@ -346,7 +318,6 @@ export type EquipmentRequestItemFormValues = {
   quantity: number;
   isReplacement: boolean;
   replacementReason: string;
-  previousEquipmentDisposition?: PreviousEquipmentDisposition | undefined;
   previousEquipmentModel: string;
   previousEquipmentAssetTag: string;
   previousEquipmentSerialNumber: string;
@@ -378,7 +349,6 @@ export const emptyEquipmentRequestItem = (): EquipmentRequestItemFormValues => (
   quantity: 1,
   isReplacement: false,
   replacementReason: "",
-  previousEquipmentDisposition: undefined,
   previousEquipmentModel: "",
   previousEquipmentAssetTag: "",
   previousEquipmentSerialNumber: "",

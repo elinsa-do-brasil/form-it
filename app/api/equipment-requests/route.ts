@@ -3,10 +3,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import {
-  equipmentRequestSchema,
-  requesterRoleLabels,
-} from "@/lib/schemas/equipment-request";
+import { equipmentRequestSchema } from "@/lib/schemas/equipment-request";
 import { buildEquipmentRequestWebhookPayload } from "@/server/equipment-requests/payload";
 
 const WEBHOOK_TIMEOUT_MS = 15_000;
@@ -137,7 +134,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message:
-          "A solicitação foi salva, mas o webhook do n8n não está configurado.",
+          "O pedido foi salvo, mas não conseguimos concluir o envio agora.",
         requestId: requestRecord.id,
       },
       { status: 500 },
@@ -180,7 +177,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           message:
-            "A solicitação foi salva, mas o webhook do n8n respondeu com erro.",
+            "O pedido foi salvo, mas não conseguimos concluir o envio agora.",
           requestId: requestRecord.id,
         },
         { status: 502 },
@@ -201,7 +198,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({
-          message: `Solicitação enviada por ${requesterRoleLabels[parsed.data.requesterRole].toLowerCase()}.`,
+      message: "Pedido enviado com sucesso.",
       requestId: requestRecord.id,
       createdAt: requestRecord.createdAt.toISOString(),
     });
@@ -229,7 +226,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message:
-          "A solicitação foi salva, mas não foi possível concluir o envio ao n8n.",
+          "O pedido foi salvo, mas não conseguimos concluir o envio agora.",
         requestId: requestRecord.id,
       },
       { status: 502 },

@@ -3,7 +3,6 @@ import {
   equipmentTypeHasProfileChoices,
   equipmentTypeLabels,
   getEquipmentProfileDefinition,
-  previousEquipmentDispositionLabels,
   requesterRoleLabels,
 } from "@/lib/schemas/equipment-request";
 
@@ -47,13 +46,6 @@ export function buildEquipmentRequestWebhookPayload({
       quantity: item.quantity,
       isReplacement: item.isReplacement,
       replacementReason: item.replacementReason,
-      previousEquipmentDisposition: item.previousEquipmentDisposition
-        ? {
-            value: item.previousEquipmentDisposition,
-            label:
-              previousEquipmentDispositionLabels[item.previousEquipmentDisposition],
-          }
-        : null,
       previousEquipment: item.isReplacement
         ? {
             model: item.previousEquipmentModel,

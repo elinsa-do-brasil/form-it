@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Plus, SendHorizontal, Trash2 } from "lucide-react";
+import { FlaskConical, Loader2, Plus, SendHorizontal, Trash2 } from "lucide-react";
 import {
   useFieldArray,
   useForm,
@@ -23,8 +23,7 @@ import {
   getDefaultEquipmentProfile,
   getEquipmentProfileDefinition,
   getEquipmentProfileOptions,
-  previousEquipmentDispositionLabels,
-  previousEquipmentDispositionOptions,
+  maxEquipmentRequestItems,
   requesterRoleLabels,
   requesterRoleOptions,
   type EquipmentRequestFormValues,
@@ -68,6 +67,8 @@ type EquipmentRequestFormProps = {
   defaultRequesterEmail?: string;
 };
 
+const showTestFillButton = process.env.NODE_ENV !== "production";
+
 function getInitialValues({
   defaultRequesterEmail,
   defaultRequesterName,
@@ -79,6 +80,71 @@ function getInitialValues({
     ...emptyEquipmentRequestValues(),
     requesterName: defaultRequesterName ?? "",
     requesterEmail: defaultRequesterEmail ?? "",
+  };
+}
+
+function getTestValues({
+  defaultRequesterEmail,
+  defaultRequesterName,
+}: Pick<
+  EquipmentRequestFormProps,
+  "defaultRequesterEmail" | "defaultRequesterName"
+>): EquipmentRequestFormValues {
+  return {
+    requesterName: defaultRequesterName ?? "Marina Souza",
+    requesterEmail: defaultRequesterEmail ?? "marina.souza@empresa.com",
+    requesterRole: "manager",
+    requesterDepartment: "Operações",
+    requesterPhone: "91991234567",
+    futureUserName: "Carlos Henrique Lima",
+    futureUserEmail: "carlos.lima@grupoamperelinsa.com",
+    futureUserCpf: "12345678909",
+    futureUserEmployeeId: "1042",
+    futureUserDepartment: "Engenharia",
+    futureUserJobTitle: "Analista de Projetos",
+    futureUserLocation: "Paragominas",
+    justification:
+      "Novo colaborador iniciando atividades em campo e escritório, com necessidade de comunicação móvel e estação de trabalho para rotinas operacionais e relatórios.",
+    requesterResponsibilityConfirmed: true,
+    items: [
+      {
+        equipmentType: "notebook",
+        equipmentProfile: "notebook_intermediate",
+        quantity: 1,
+        isReplacement: false,
+        replacementReason: "",
+        previousEquipmentModel: "",
+        previousEquipmentAssetTag: "",
+        previousEquipmentSerialNumber: "",
+        previousEquipmentPhoneNumber: "",
+        previousEquipmentNotes: "",
+      },
+      {
+        equipmentType: "cellphone",
+        equipmentProfile: "cellphone_standard",
+        quantity: 1,
+        isReplacement: false,
+        replacementReason: "",
+        previousEquipmentModel: "",
+        previousEquipmentAssetTag: "",
+        previousEquipmentSerialNumber: "",
+        previousEquipmentPhoneNumber: "",
+        previousEquipmentNotes: "",
+      },
+      {
+        equipmentType: "extra_monitor",
+        equipmentProfile: "standard",
+        quantity: 1,
+        isReplacement: true,
+        replacementReason:
+          "Monitor anterior com falha intermitente e perda de imagem.",
+        previousEquipmentModel: "Dell P2219H",
+        previousEquipmentAssetTag: "MON-004281",
+        previousEquipmentSerialNumber: "CN0ABC123456",
+        previousEquipmentPhoneNumber: "",
+        previousEquipmentNotes: "Piscando durante o uso em estação fixa.",
+      },
+    ],
   };
 }
 
@@ -111,6 +177,10 @@ export function EquipmentRequestForm({
     control: form.control,
     name: "requesterResponsibilityConfirmed",
   });
+  const itemsErrorMessage =
+    typeof form.formState.errors.items?.message === "string"
+      ? form.formState.errors.items.message
+      : undefined;
 
   async function onSubmit(values: EquipmentRequestFormValues) {
     const response = await fetch("/api/equipment-requests", {
@@ -125,13 +195,8 @@ export function EquipmentRequestForm({
       | { message?: string; requestId?: string }
       | null;
 
-    if (payload?.requestId) {
-      if (response.ok) {
-        toast.success(payload.message ?? "Solicitação enviada com sucesso.");
-      } else if (payload.message) {
-        toast.error(payload.message);
-      }
-
+    if (response.ok && payload?.requestId) {
+      toast.success(payload.message ?? "Solicitação enviada com sucesso.");
       router.push(`/confirmacao/${payload.requestId}`);
       return;
     }
@@ -142,17 +207,43 @@ export function EquipmentRequestForm({
   }
 
   const isBusy = form.formState.isSubmitting;
-  const canAddMoreItems = fields.length < equipmentTypeOptions.length;
+  const canAddMoreItems = fields.length < maxEquipmentRequestItems;
+
+  function fillWithTestData() {
+    form.reset(
+      getTestValues({
+        defaultRequesterName,
+        defaultRequesterEmail,
+      }),
+    );
+    toast.success("Dados de teste preenchidos.");
+  }
 
   return (
     <Card className="border-border/70 shadow-sm">
       <CardHeader className="gap-3">
-        <CardTitle className="text-2xl">Solicitação de equipamentos</CardTitle>
-        <CardDescription className="max-w-2xl">
-          Preencha os dados do solicitante, do futuro usuário e selecione os
-          perfis padronizados de cada item. O envio é registrado no banco e
-          encaminhado ao fluxo do n8n ao final.
-        </CardDescription>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-2">
+            <CardTitle className="text-2xl">Solicitação de equipamentos</CardTitle>
+            <CardDescription className="max-w-2xl">
+              Preencha os dados do solicitante, do futuro usuário e selecione os
+              itens desejados. Depois do envio, o pedido segue para análise.
+            </CardDescription>
+          </div>
+
+          {showTestFillButton ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={fillWithTestData}
+              disabled={isBusy}
+            >
+              <FlaskConical />
+              Preencher teste
+            </Button>
+          ) : null}
+        </div>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -401,8 +492,9 @@ export function EquipmentRequestForm({
                     3. Equipamentos solicitados
                   </h2>
                   <p className="text-muted-foreground text-sm">
-                    Cada tipo pode aparecer uma única vez por solicitação. Os
-                    perfis padronizados orientam o provisionamento do item.
+                    Cada tipo pode aparecer uma unica vez por solicitacao, com
+                    limite de ate {maxEquipmentRequestItems} itens por pedido.
+                    Os perfis padronizados orientam o provisionamento do item.
                   </p>
                 </div>
               </div>
@@ -649,49 +741,9 @@ export function EquipmentRequestForm({
 
                               <FormField
                                 control={form.control}
-                                name={`items.${index}.previousEquipmentDisposition` as const}
-                                render={({ field }) => (
-                                  <FormItem className="md:col-span-2">
-                                    <FormLabel>
-                                      O que será feito com o equipamento anterior?
-                                    </FormLabel>
-                                    <Select
-                                      value={field.value}
-                                      onValueChange={field.onChange}
-                                      disabled={isBusy}
-                                    >
-                                      <FormControl>
-                                        <SelectTrigger className="w-full">
-                                          <SelectValue placeholder="Selecione o destino do item anterior" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        {previousEquipmentDispositionOptions.map(
-                                          (disposition) => (
-                                            <SelectItem
-                                              key={disposition}
-                                              value={disposition}
-                                            >
-                                              {
-                                                previousEquipmentDispositionLabels[
-                                                  disposition
-                                                ]
-                                              }
-                                            </SelectItem>
-                                          ),
-                                        )}
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={form.control}
                                 name={`items.${index}.previousEquipmentModel` as const}
                                 render={({ field }) => (
-                                  <FormItem>
+                                  <FormItem className="md:col-span-2">
                                     <FormLabel>Modelo anterior</FormLabel>
                                     <FormControl>
                                       <Input
@@ -786,14 +838,23 @@ export function EquipmentRequestForm({
               </div>
 
               <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => append(emptyEquipmentRequestItem())}
-                  disabled={!canAddMoreItems || isBusy}
+                type="button"
+                variant="outline"
+                onClick={() => append(emptyEquipmentRequestItem())}
+                disabled={!canAddMoreItems || isBusy}
                 >
-                  <Plus />
-                  Adicionar item
-                </Button>
+                <Plus />
+                Adicionar item
+              </Button>
+
+              {itemsErrorMessage ? (
+                <p className="text-destructive text-sm">{itemsErrorMessage}</p>
+              ) : !canAddMoreItems ? (
+                <p className="text-muted-foreground text-sm">
+                  Este formulario aceita no maximo {maxEquipmentRequestItems} itens
+                  por solicitacao.
+                </p>
+              ) : null}
             </section>
 
             <Separator />
@@ -802,8 +863,8 @@ export function EquipmentRequestForm({
               <div className="space-y-1">
                 <h2 className="text-lg font-semibold">4. Justificativa</h2>
                 <p className="text-muted-foreground text-sm">
-                  Explique a necessidade do pedido para facilitar a triagem do
-                  time de TI e o processamento no n8n.
+                  Explique a necessidade do pedido para ajudar na análise e no
+                  atendimento da solicitação.
                 </p>
               </div>
 

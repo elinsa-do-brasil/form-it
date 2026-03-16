@@ -45,48 +45,36 @@ export default async function HomePage() {
               Como funciona o pedido de equipamento
             </CardTitle>
             <CardDescription>
-              Acompanhe cada etapa do processo, desde a solicitação até a entrega
-              do equipamento.
+              Veja de forma simples o que acontece depois que o pedido é enviado.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div className="rounded-lg border px-4 py-3">
               <p className="font-medium">1. Solicitação</p>
               <p className="text-muted-foreground mt-1">
-                O solicitante preenche e envia o pedido por este formulário. A
-                solicitação é encaminhada ao coordenador do setor de TI.
+                O pedido é preenchido e enviado por este formulário.
               </p>
             </div>
             <div className="rounded-lg border px-4 py-3">
-              <p className="font-medium">2. Análise do coordenador</p>
+              <p className="font-medium">2. Análise</p>
               <p className="text-muted-foreground mt-1">
-                O coordenador de TI avalia o pedido e decide pela aprovação ou
-                reprovação.
+                O pedido é avaliado para seguir com a preparação.
               </p>
             </div>
             <div className="rounded-lg border px-4 py-3">
               <p className="font-medium">3. Notificação</p>
               <p className="text-muted-foreground mt-1">
-                O solicitante é notificado sobre o resultado da análise do
-                coordenador.
+                Você recebe atualizações no número de contato informado.
               </p>
             </div>
             <div className="rounded-lg border px-4 py-3">
-              <p className="font-medium">4. Compras ou alocações</p>
+              <p className="font-medium">4. Preparação</p>
               <p className="text-muted-foreground mt-1">
-                Após a aprovação, as compras ou alocações necessárias são
-                preparadas.
+                Depois da análise, o equipamento é separado e preparado.
               </p>
             </div>
             <div className="rounded-lg border px-4 py-3">
-              <p className="font-medium">5. Termo de responsabilidade</p>
-              <p className="text-muted-foreground mt-1">
-                Um termo de responsabilidade de uso é emitido para o
-                futuro usuário.
-              </p>
-            </div>
-            <div className="rounded-lg border px-4 py-3">
-              <p className="font-medium">6. Entrega</p>
+              <p className="font-medium">5. Entrega</p>
               <p className="text-muted-foreground mt-1">
                 O equipamento é entregue ao futuro usuário.
               </p>
