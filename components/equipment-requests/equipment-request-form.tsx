@@ -61,6 +61,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import Image from "next/image";
 
 type EquipmentRequestFormProps = {
   defaultRequesterName?: string;
@@ -223,12 +224,17 @@ export function EquipmentRequestForm({
     <Card className="border-border/70 shadow-sm lg:h-full lg:min-h-0">
       <CardHeader className="border-border/70 gap-3 border-b lg:shrink-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-2">
-            <CardTitle className="text-2xl">Solicitação de equipamentos</CardTitle>
-            <CardDescription className="max-w-2xl">
-              Preencha os dados do solicitante, do futuro usuário e selecione os
-              itens desejados. Depois do envio, o pedido segue para análise.
-            </CardDescription>
+          <div className="flex items-center gap-6">
+            <Image src="/logo.png" alt="Logo" width={120} height={120} className="shrink-0" />
+            <div className="space-y-2">
+              <CardTitle className="text-2xl">
+                Solicitação de equipamentos
+              </CardTitle>
+              <CardDescription className="max-w-2xl">
+                Preencha os dados do solicitante, do futuro usuário e selecione os
+                itens desejados. Depois do envio, o pedido segue para análise.
+              </CardDescription>
+            </div>
           </div>
 
           {showTestFillButton ? (
@@ -842,7 +848,7 @@ export function EquipmentRequestForm({
                 variant="outline"
                 onClick={() => append(emptyEquipmentRequestItem())}
                 disabled={!canAddMoreItems || isBusy}
-                >
+              >
                 <Plus />
                 Adicionar item
               </Button>
