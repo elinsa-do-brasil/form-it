@@ -654,7 +654,7 @@ export function EquipmentRequestForm({
                                               className={cn(
                                                 "flex cursor-pointer flex-col gap-2 rounded-lg border p-4 transition-colors",
                                                 isSelected
-                                                  ? "border-primary bg-primary/5"
+                                                  ? "border-primary bg-primary/8 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
                                                   : "hover:bg-muted/40",
                                               )}
                                             >

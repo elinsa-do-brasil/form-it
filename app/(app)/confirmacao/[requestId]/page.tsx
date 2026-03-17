@@ -36,9 +36,9 @@ export default async function ConfirmationPage({
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-2xl items-center justify-center py-6">
-      <Card className="w-full border-border/70 shadow-sm">
-        <CardContent className="flex flex-col items-center gap-5 px-8 py-12 text-center">
-          <div className="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300 flex size-20 items-center justify-center rounded-full">
+        <Card className="w-full border-border/70 shadow-sm">
+          <CardContent className="flex flex-col items-center gap-5 px-8 py-12 text-center">
+          <div className="bg-primary/12 text-primary flex size-20 items-center justify-center rounded-full">
             <CircleCheckBig className="size-10" />
           </div>
 
