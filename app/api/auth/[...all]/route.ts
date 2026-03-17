@@ -7,8 +7,6 @@
 //
 // 📌 COMO FUNCIONA:
 // O Better Auth expõe vários endpoints automaticamente:
-//   POST /api/auth/sign-in/email → login por e-mail
-//   POST /api/auth/sign-up/email → criar conta
 //   POST /api/auth/sign-in/social → login OAuth
 //   GET  /api/auth/session → obter sessão atual
 //   POST /api/auth/sign-out → logout
@@ -19,7 +17,7 @@
 //
 // 🐤 Analogia: é como uma recepcionista que atende QUALQUER
 // ligação que chega no ramal /api/auth/ e encaminha para o
-// departamento certo (login, registro, logout, etc.).
+// departamento certo (login OAuth, sessão, logout, etc.).
 //
 // ⚠️ NÃO MODIFIQUE este arquivo ao fazer fork, a menos que
 // precise mudar o basePath do Better Auth.

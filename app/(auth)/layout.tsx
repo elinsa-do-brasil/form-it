@@ -1,8 +1,8 @@
 // ============================================================
 // 🔒 LAYOUT DE AUTENTICAÇÃO (Grupo de Rotas: auth)
 // ============================================================
-// Este layout envolve as páginas de login (/entrar) e
-// registro (/criar-conta). Ele faz duas coisas:
+// Este layout envolve a página de login (/entrar).
+// Ele faz duas coisas:
 //
 // 1. PROTEÇÃO: se o usuário JÁ está logado, redireciona
 //    para a home (não faz sentido ver a tela de login logado)
@@ -38,9 +38,9 @@ export default async function AuthLayout({
   }
 
   // Renderiza o layout de autenticação:
-  // - Tela cheia (min-w-dvw + min-h-dvh)
-  // - Conteúdo centralizado (flex + justify-center + items-center)
-  // - Card com largura mínima e máxima controladas
+// - Tela cheia (min-w-dvw + min-h-dvh)
+// - Conteúdo centralizado (flex + justify-center + items-center)
+// - Card com largura mínima e máxima controladas
   return (
     <main className="min-w-dvw min-h-dvh flex justify-center items-center">
       <Card className="min-w-[24rem] max-w-108">{children}</Card>

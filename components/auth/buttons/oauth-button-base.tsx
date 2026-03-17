@@ -11,7 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 // funções:
 import { authClient } from "@/lib/auth-client";
 
-type OAuthProvider = "github" | "google" | "microsoft"; // vai só expandindo aqui
+type OAuthProvider = "microsoft";
 
 interface OAuthButtonBaseProps {
   provider: OAuthProvider;

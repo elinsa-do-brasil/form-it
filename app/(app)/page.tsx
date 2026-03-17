@@ -26,13 +26,15 @@ export default async function HomePage() {
     : null;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 py-6 lg:grid-cols-[minmax(0,1.8fr)_360px]">
-      <EquipmentRequestForm
-        defaultRequesterName={session.user.name}
-        defaultRequesterEmail={session.user.email}
-      />
+    <div className="mx-auto grid max-w-6xl gap-6 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1.8fr)_360px] lg:overflow-hidden">
+      <div className="lg:min-h-0">
+        <EquipmentRequestForm
+          defaultRequesterName={session.user.name}
+          defaultRequesterEmail={session.user.email}
+        />
+      </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 lg:self-start">
         <Card>
           <CardHeader className="gap-3">
             <div className="flex flex-wrap items-center gap-2">

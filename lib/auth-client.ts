@@ -1,10 +1,5 @@
 import { createAuthClient } from "better-auth/react";
-import {
-  organizationClient,
-  twoFactorClient,
-  usernameClient,
-} from "better-auth/client/plugins";
-import { passkeyClient } from "@better-auth/passkey/client";
+import { organizationClient } from "better-auth/client/plugins";
 
 import { ac, owner, admin, member } from "@/server/permissions";
 
@@ -19,9 +14,6 @@ const client = createAuthClient({
         member,
       },
     }),
-    twoFactorClient(),
-    passkeyClient(),
-    usernameClient(),
   ],
 });
 

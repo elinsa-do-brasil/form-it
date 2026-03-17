@@ -220,8 +220,8 @@ export function EquipmentRequestForm({
   }
 
   return (
-    <Card className="border-border/70 shadow-sm">
-      <CardHeader className="gap-3">
+    <Card className="border-border/70 shadow-sm lg:h-full lg:min-h-0">
+      <CardHeader className="border-border/70 gap-3 border-b lg:shrink-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
             <CardTitle className="text-2xl">Solicitação de equipamentos</CardTitle>
@@ -245,9 +245,9 @@ export function EquipmentRequestForm({
           ) : null}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-1">
             <section className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-lg font-semibold">1. Dados do solicitante</h2>
